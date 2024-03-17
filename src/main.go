@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+    "sync"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -18,6 +19,24 @@ type Request struct {
 
 type App struct {
     db *leveldb.DB
+    mlock sync.Mutex
+    lock map[string]bool
+}
+
+func (a *App) lockRecord(key string) bool {
+    a.mlock.Lock()
+    defer a.mlock.Unlock()
+    if _, exists := a.lock[key]; exists {
+        return false
+    }
+    a.lock[key] = true
+    return true
+}
+
+func (a *App) unlockRecord(key string) {
+    a.mlock.Lock()
+    delete(a.lock, key)
+    a.mlock.Unlock()
 }
 
 func (a *App) getRecord(key string) ([]byte, int) {
@@ -69,6 +88,17 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     body := Request{}
     json.NewDecoder(r.Body).Decode(&body)
 
+    // we need to lock records if a put/delete is happening, then unlock
+    if r.Method == "POST" || r.Method == "DELETE" {
+        if !a.lockRecord(body.Key) {
+            // Cant lock the key
+            w.WriteHeader(409)
+            return
+        }
+        defer a.unlockRecord(body.Key)
+    }
+
+
     // Route request
     switch r.Method {
         case "POST":
@@ -90,7 +120,7 @@ func main() {
     // Serve
     http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
     rand.Seed(time.Now().Unix())
-    a:= App{db: db}
+    a:= App{db: db, lock: make(map[string]bool)}
 
     fmt.Println("kv running at localhost:3000")
     http.ListenAndServe(":3000", &a)
