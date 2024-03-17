@@ -45,6 +45,19 @@ func (a *App) get(w http.ResponseWriter, body *Request) {
     }
 }
 
+func (a *App) delete(w http.ResponseWriter, body *Request) {
+    err := a.db.Delete([]byte(body.Key), nil)
+
+    // TODO: Better error handling
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        w.Write([]byte("500 - Example error message"))
+    } else {
+        w.WriteHeader(http.StatusAccepted)
+        w.Write([]byte("201 - OK"))
+    }
+}
+
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     log.Println(r.Method, r.URL, r.ContentLength)
 
@@ -59,22 +72,22 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
             a.set(w, &body)
         case "GET":
             a.get(w, &body)
+        case "DELETE":
+            a.delete(w, &body)
     }
 }
 
 func main() {
-    // Handle multiple transport
-    http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
-    rand.Seed(time.Now().Unix())
-
     // connect to level db 
     db, err := leveldb.OpenFile("test", nil)
     check(err, "Error opening leveldb")
     defer db.Close()
 
-    // Serve
-    a:= App{db: db}
 
+    // Serve
+    http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+    rand.Seed(time.Now().Unix())
+    a:= App{db: db}
 
     fmt.Println("kv running at localhost:3000")
     http.ListenAndServe(":3000", &a)
