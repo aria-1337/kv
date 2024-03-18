@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
     "sync"
+    "flag"
 
 	"github.com/syndtr/goleveldb/leveldb"
 )
@@ -99,8 +100,8 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     body := Request{}
     json.NewDecoder(r.Body).Decode(&body)
 
-    // we need to lock records if a put/delete is happening, then unlock
-    if r.Method == "POST" || r.Method == "DELETE" {
+    // we need to lock records if a put/delete/patch is happening, then unlock
+    if r.Method == "POST" || r.Method == "DELETE" || r.Method == "PATCH" {
         if !a.lockRecord(body.Key) {
             // Cant lock the key
             w.WriteHeader(409)
@@ -124,19 +125,21 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+    // Connection options
+    port := flag.Int("port", 3000, "port the kv server listens on")
+
     // connect to level db 
     db, err := leveldb.OpenFile("test", nil)
     check(err, "Error opening leveldb")
     defer db.Close()
-
 
     // Serve
     http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
     rand.Seed(time.Now().Unix())
     a:= App{db: db, lock: make(map[string]bool)}
 
-    fmt.Println("kv running at localhost:3000")
-    http.ListenAndServe(":3000", &a)
+    fmt.Println("kv listening at localhost:", *port)
+    http.ListenAndServe(fmt.Sprintf(":%d", *port), &a)
 }
 
 func check(err error, message string) {
