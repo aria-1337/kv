@@ -80,6 +80,17 @@ func (a *App) delete(w http.ResponseWriter, body *Request) {
     w.WriteHeader(204)
 }
 
+// PATCH - 200=success 404=record doesnt exist
+func (a *App) update(w http.ResponseWriter, body *Request) {
+    _, code := a.getRecord(body.Key)
+    if code == 404 {
+        w.WriteHeader(404)
+        return
+    }
+    a.db.Put([]byte(body.Key), []byte(fmt.Sprint(body.Value)), nil)
+    w.WriteHeader(200)
+}
+
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     log.Println(r.Method, r.URL, r.ContentLength)
 
@@ -107,6 +118,8 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
             a.get(w, &body)
         case "DELETE":
             a.delete(w, &body)
+        case "PATCH":
+            a.update(w, &body)
     }
 }
 

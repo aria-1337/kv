@@ -22,13 +22,16 @@ GET example
 DELETE example
 ~> curl -X DELETE -d '{"key": "coolKeyName"}' localhost:3000
 #> 204 success | 409 Conflict (key doesn't exist)
+
+PATCH example
+~> curl -X PATCH -d '{"key": "existingKey", "value": "newValue"}' localhost:3000
+#> 200 success | 404 Record doesn't exist
 ```
 
 It does:
-- GET/SET/DELETE
+- GET/SET/DELETE/PATCH
 
 TODO:
-- PATCH
 - Multiple volumes
 - Distrubution
 - Docker build
