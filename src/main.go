@@ -127,9 +127,10 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
     // Connection options
     port := flag.Int("port", 3000, "port the kv server listens on")
+    leveldbPath := flag.String("leveldbPath", "lvldb", "path ro leveldb")
 
     // connect to level db 
-    db, err := leveldb.OpenFile("test", nil)
+    db, err := leveldb.OpenFile(*leveldbPath, nil)
     check(err, "Error opening leveldb")
     defer db.Close()
 
@@ -138,7 +139,7 @@ func main() {
     rand.Seed(time.Now().Unix())
     a:= App{db: db, lock: make(map[string]bool)}
 
-    fmt.Println("kv listening at localhost:", *port)
+    fmt.Println("kv listening at localhost:", *port, "\n leveldb path:", *leveldbPath)
     http.ListenAndServe(fmt.Sprintf(":%d", *port), &a)
 }
 
