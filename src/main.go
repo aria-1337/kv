@@ -129,6 +129,10 @@ func main() {
     port := flag.Int("port", 3000, "port the kv server listens on")
     leveldbPath := flag.String("leveldbPath", "lvldb", "path ro leveldb")
 
+    if *leveldbPath == "" {
+        panic("leveldbPath must have a value")
+    }
+
     // connect to level db 
     db, err := leveldb.OpenFile(*leveldbPath, nil)
     check(err, "Error opening leveldb")
