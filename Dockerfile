@@ -26,3 +26,5 @@ COPY ./go.mod /dist/src
 COPY ./go.sum /dist/src
 COPY src/*.go /dist/src
 WORKDIR /dist
+
+CMD ["build.sh"]
