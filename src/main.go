@@ -39,6 +39,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     switch r.Method {
         case "GET":
             data, code := a.Get(key)
+            serverError := handle500(code, w); if serverError { return }
             w.WriteHeader(code)
             w.Write(data)
         case "POST":
@@ -48,7 +49,8 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
                 return
             }
             code = a.Set(key, &body)
-            w.WriteHeader(code)
+            serverError := handle500(code, w); if serverError { return }
+            w.WriteHeader(201)
         case "DELETE":
             _, code := a.Get(key)
             if code == 404 {
@@ -56,7 +58,8 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
                 return
             }
             code = a.Delete(key)
-            w.WriteHeader(code)
+            serverError := handle500(code, w); if serverError { return }
+            w.WriteHeader(200)
         case "PATCH":
             _, code := a.Get(key)
             if code != 200 {
@@ -64,6 +67,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
                 return
             }
             code = a.Set(key, &body)
+            serverError := handle500(code, w); if serverError { return }
             w.WriteHeader(code)
     }
 }
@@ -80,7 +84,9 @@ func main() {
 
     // connect to level db 
     db, err := leveldb.OpenFile(*leveldbPath, nil)
-    check(err, "Error opening leveldb")
+    if err != nil {
+        fmt.Println("Could not connect to leveldb:", err)
+    }
     defer db.Close()
 
     // Serve
@@ -92,8 +98,11 @@ func main() {
     http.ListenAndServe(fmt.Sprintf(":%d", *port), &a)
 }
 
-func check(err error, message string) {
-    if err != nil {
-        panic(fmt.Sprintf("%s: %s", message, err))
+func handle500(code int, w http.ResponseWriter) bool {
+    if code == 500 {
+        w.WriteHeader(500)
+        w.Write([]byte("Server error"))
+        return true
     }
+    return false
 }
