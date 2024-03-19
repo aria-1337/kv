@@ -1,6 +1,8 @@
 # kv
 Simple GO K/V database powered by leveldb.
 
+### API
+
 HTTP requests are made via json.
 ```json
 {
@@ -28,10 +30,10 @@ PATCH example
 #> 200 success | 404 Record doesn't exist
 ```
 
-It does:
-- GET/SET/DELETE/PATCH
+### Docker
+TODO: upload image to dockerhub in the meantime...
 
-TODO:
-- Multiple volumes
-- Distrubution
-- Docker build
+```
+docker build -t kv .
+docker run --env PORT=3001 --env LEVEL_DB_PATH=test -P -t kv:latest
+```

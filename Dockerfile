@@ -1,5 +1,14 @@
 FROM ubuntu:22.04
 
+# Args (ex: docker run --env PORT=3001 LEVEL_DB_PATH=awesome -t kv:latest)
+ARG PORT
+ENV PORT=$PORT
+
+ARG LEVEL_DB_PATH
+ENV LEVEL_DB_PATH=$LEVEL_DB_PATH
+
+EXPOSE $PORT
+
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
@@ -27,4 +36,4 @@ COPY ./go.sum /dist/src
 COPY src/*.go /dist/src
 WORKDIR /dist
 
-CMD ["build.sh"]
+CMD ./build.sh -port=$PORT -leveldbPath=$LEVEL_DB_PATH

@@ -127,7 +127,8 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
     // Connection options
     port := flag.Int("port", 3000, "port the kv server listens on")
-    leveldbPath := flag.String("leveldbPath", "lvldb", "path ro leveldb")
+    leveldbPath := flag.String("leveldbPath", "lvldb", "path to leveldb")
+    flag.Parse()
 
     if *leveldbPath == "" {
         panic("leveldbPath must have a value")
